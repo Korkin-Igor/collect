@@ -1,0 +1,29 @@
+{
+    "name": "korkin-igor/collect",
+    "description": "Module for working with arrays.",
+    "type": "library",
+    "license": "MIT",
+    "keywords": [
+        "collection",
+        "php",
+        "helper"
+    ],
+    "authors": [
+        {
+            "name": "Igor Korkin",
+            "email": "korkinigor1211@gmail.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {
+        "php": "^7.4 | ^8.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Collect\\": "src/"
+        },
+        "files": [
+            "src/helpers.php"
+        ]
+    }
+}

@@ -1,52 +1,18 @@
-version: '3'
-
-networks:
-  default:
-    name: ${PROJECT_NAME:-project}-network
-    driver: bridge
-
-volumes:
-  db-dev:
-
 services:
-  php:
+  app:
     build:
-      context: ./
+      context: .
       args:
-        USER: ${USER:-user}
-        PASSWORD: ${PASSWORD:-password}
-    environment:
-      - APACHE_RUN_USER=${USER:-user}
-      - APACHE_RUN_GROUP=${USER:-user}
-      - LC_CDPATH=/var/www/html
-    restart: unless-stopped
-    container_name: ${PROJECT_NAME:-project}-php
+        APP_USER: ${APP_USER:-app}
+        APP_UID: ${APP_UID:-1000}
+        APP_GID: ${APP_GID:-1000}
+    container_name: ${PROJECT_NAME:-collect}-app
+    working_dir: /app
     volumes:
-      - ./:/var/www/html
+      - ./:/app
     ports:
-      - ${WEB_PORT:-10000}:80
-    depends_on:
-      - db
-  
-  db:
-    image: mariadb:10.7
-    restart: unless-stopped
-    container_name: ${PROJECT_NAME:-project}-db
-    environment:
-      MYSQL_DATABASE: ${DB_NAME:-db}
-      MYSQL_ROOT_PASSWORD: ${USER_DB_PASSWORD:-QWEasd123!}
-      MYSQL_USER: ${USER:-user}
-      MYSQL_PASSWORD: ${PASSWORD:-password}
-    volumes:
-      - db-dev:/var/lib/mysql
-
-  phpmyadmin:
-    image: phpmyadmin/phpmyadmin
-    restart: unless-stopped
-    container_name: ${PROJECT_NAME:-project}-phpmyadmin
-    ports:
-      - ${WEB_PORT_PHPMYADMIN:-8888}:80
-    environment:
-      - PMA_HOST=db
-    depends_on:
-      - db
+      - ${APP_PORT:-10000}:8000
+    tty: true
+    stdin_open: true
+    init: true
+    command: ["php", "-S", "0.0.0.0:8000", "-t", "/app"]

@@ -1,42 +1,28 @@
-FROM php:8-apache
-ARG USER=user
-ARG PASSWORD=password
+FROM composer:2 AS composer
 
-# Install dependencies
-RUN apt-get update && apt-get install -y \
-    sudo \
-    build-essential \
-    libzip-dev \
-    libpng-dev \
-    libjpeg62-turbo-dev \
-    libwebp-dev libjpeg62-turbo-dev libpng-dev libxpm-dev \
-    libfreetype6 \
-    libfreetype6-dev \
-    locales \
-    zip \
-    jpegoptim optipng pngquant gifsicle \
-    nano \
-    unzip \
-    git \
-    curl
+FROM php:8.3-cli
 
-# Install extensions
-RUN docker-php-ext-install pdo_mysql zip exif pcntl mysqli gd
+ARG APP_USER=app
+ARG APP_UID=1000
+ARG APP_GID=1000
 
-#Add user
-RUN useradd -m -s /bin/bash -p $(openssl passwd -1 $PASSWORD) $USER
-RUN usermod -g $USER $USER
-RUN usermod -aG sudo $USER
-RUN chown -R $USER.$USER /var/www/html
-RUN echo "cd /var/www/html">>/home/$USER/.bashrc
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends git unzip zip libzip-dev \
+    && docker-php-ext-install zip \
+    && groupadd --gid "${APP_GID}" "${APP_USER}" \
+    && useradd --uid "${APP_UID}" --gid "${APP_GID}" --create-home --shell /bin/bash "${APP_USER}" \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
-#Install Composer
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin --filename=composer
+COPY --from=composer /usr/bin/composer /usr/local/bin/composer
 
-# Clear cache
-RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+WORKDIR /app
 
-#Apache configure
-RUN a2enmod rewrite
+ENV COMPOSER_HOME=/home/${APP_USER}/.composer
+ENV PATH="${COMPOSER_HOME}/vendor/bin:${PATH}"
 
-ENTRYPOINT chmod 777 -R /var/www/html && apache2-foreground
+USER ${APP_USER}
+
+EXPOSE 8000
+
+CMD ["php", "-S", "0.0.0.0:8000", "-t", "/app"]
